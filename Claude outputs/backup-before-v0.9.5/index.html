@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#ffe6f2">
+<title>Unicorn Adventure</title>
+<style>
+  :root{
+    --pink:#ff8fc0; --pink-d:#e0589a; --lav:#b79bff; --mint:#8fe3c0; --sun:#ffd36b; --ink:#4a3a7a; --card:rgba(255,255,255,.88);
+    --font: ui-rounded, "SF Pro Rounded", "Nunito", "Baloo 2", "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#ffe4f1;font-family:var(--font);color:var(--ink);touch-action:none;user-select:none;-webkit-user-select:none}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none}
+  .hidden{display:none!important}
+  svg{width:1.2em;height:1.2em;vertical-align:-.2em}
+
+  /* HUD */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+  #hud-left{position:absolute;left:max(14px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));display:flex;gap:8px;flex-wrap:wrap;max-width:60vw}
+  .pill{background:var(--card);border-radius:999px;padding:7px 14px 7px 10px;font-weight:800;font-size:18px;display:flex;align-items:center;gap:7px;box-shadow:0 3px 0 rgba(183,155,255,.35)}
+  .pill .ico{display:inline-flex;font-size:22px}
+  #pill-spell{pointer-events:auto;cursor:pointer;color:var(--ink)}#pill-spell .ico{color:#b07bff}#hud-spell{font-size:16px}
+  #pill-spell:active{transform:translateY(2px)}
+  #t-spell{width:62px;height:62px;right:120px;bottom:96px;color:#b07bff;font-size:11px}
+  #t-spell svg{font-size:22px}
+  #ico-heart{color:#ff6fa6} #ico-candy{color:#ff9a4d} #ico-ring{color:#8f78ff} #ico-quest{color:#ffb300} #hud-quest{font-size:16px}
+  #hud-right{position:absolute;right:max(14px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));display:flex;gap:8px;pointer-events:auto}
+  .rb{width:46px;height:46px;border-radius:50%;border:0;background:var(--card);color:var(--lav);font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 0 rgba(183,155,255,.35)}
+  .rb:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(183,155,255,.35)}
+  #compass{position:absolute;right:max(14px,env(safe-area-inset-right));top:calc(max(12px,env(safe-area-inset-top)) + 58px);width:76px;height:76px;border-radius:50%;border:0;padding:0;background:var(--card);box-shadow:0 3px 0 rgba(183,155,255,.35);pointer-events:auto;cursor:pointer;color:var(--lav);font:inherit}
+  #compass:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(183,155,255,.35)}
+  #rose{position:absolute;inset:0;will-change:transform}
+  #rose b{position:absolute;width:18px;text-align:center;font-weight:900;font-size:13px;line-height:1}
+  #rose .n{left:29px;top:5px;color:#ff5f9e;font-size:17px}
+  #rose .s{left:29px;bottom:6px}
+  #rose .e{right:6px;top:31px}
+  #rose .w{left:6px;top:31px}
+  #rose:after{content:"";position:absolute;inset:21px;border-radius:50%;border:2px dashed #e4d7ff}
+  #heading{position:absolute;inset:0;will-change:transform}
+  #heading svg{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;color:#ff6fa6;filter:drop-shadow(0 1px 0 rgba(255,255,255,.9))}
+  @media (max-width:640px){#compass{width:62px;height:62px}#rose .n{left:22px;top:3px;font-size:15px}#rose .s{left:22px;bottom:4px}#rose .e{right:3px;top:24px}#rose .w{left:3px;top:24px}#rose:after{inset:17px}#heading svg{width:22px;height:22px;margin:-11px 0 0 -11px}}
+  #toast{position:absolute;left:50%;top:76px;transform:translate(-50%,-14px);background:var(--card);padding:12px 22px;border-radius:22px;font-weight:800;font-size:19px;text-align:center;max-width:min(92vw,560px);opacity:0;transition:opacity .35s,transform .35s;box-shadow:0 4px 0 rgba(183,155,255,.35)}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+  #toast small{display:block;font-weight:700;font-size:14px;opacity:.75;margin-top:2px}
+  #tags{position:absolute;inset:0;overflow:hidden}
+  .bubble{position:absolute;left:0;top:0;background:#fff;border-radius:18px;padding:6px 14px;font-weight:800;font-size:17px;white-space:nowrap;opacity:0;box-shadow:0 3px 0 rgba(183,155,255,.4);will-change:transform}
+  .bubble:after{content:"";position:absolute;left:50%;bottom:-7px;margin-left:-7px;border:7px solid transparent;border-top-color:#fff;border-bottom:0}
+
+  #flash{position:fixed;inset:0;background:radial-gradient(circle,#fff,#ffd6f5);opacity:0;pointer-events:none;z-index:15;transition:opacity .5s}
+  #flash.on{opacity:.92;transition:opacity .1s}
+  #prompts{position:absolute;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:10px;width:max-content;max-width:min(96vw,980px);pointer-events:none}
+  @media (max-width:900px){#prompts{bottom:244px}}
+  .pcard{background:var(--card);border-radius:24px;padding:10px 14px 12px;text-align:center;box-shadow:0 4px 0 rgba(183,155,255,.35);opacity:0;transform:translateY(20px) scale(.94);transition:opacity .25s,transform .25s,box-shadow .2s;pointer-events:none}
+  .pcard.show{opacity:.82;transform:none;pointer-events:auto}
+  .pcard.show.focus{opacity:1;box-shadow:0 0 0 4px #ff8fc0,0 5px 0 rgba(183,155,255,.5)}
+  .pcard:not(.focus) kbd{display:none}
+  .pcard:not(.focus) .pname{font-size:17px}
+  .pcard:not(.focus) .pacts button{font-size:15px;padding:7px 13px}
+  #prompts.touch .pcard.show{opacity:1}
+  #prompts.touch .pcard.show.focus{box-shadow:0 4px 0 rgba(183,155,255,.35)}
+  #prompts.touch .pcard:not(.focus) .pname{font-size:20px}
+  #prompts.touch .pcard:not(.focus) .pacts button{font-size:17px;padding:9px 16px}
+  #phint{order:99;flex-basis:100%;display:none;justify-content:center;pointer-events:none}
+  #phint.on{display:flex}
+  #phint kbd{background:#efe6ff}
+  #phint span{background:rgba(255,255,255,.85);border-radius:14px;padding:3px 12px;font-weight:800;font-size:13px;box-shadow:0 2px 0 rgba(183,155,255,.3)}
+  .pname{font-weight:900;font-size:20px;margin-bottom:8px}
+  .pname small{font-weight:700;font-size:13px;opacity:.7;margin-left:4px}
+  .hearts{margin-left:10px;display:inline-flex;gap:2px;font-size:18px}
+  .hearts .on{color:#ff6fa6}.hearts .off{color:#d9c9f5}
+  .pacts{display:flex;gap:8px;justify-content:center}
+  .pacts button{font:inherit;font-weight:900;font-size:17px;background:linear-gradient(#ffb3d6,#ff8fc0);border:0;color:#fff;padding:9px 16px;border-radius:16px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 3px 0 var(--pink-d)}
+  .pacts button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--pink-d)}
+  .pacts button.dim{filter:saturate(.35) brightness(1.05);opacity:.8}
+  kbd{font:inherit;font-size:12px;background:rgba(255,255,255,.55);border-radius:6px;padding:1px 6px;color:var(--ink)}
+
+  /* touch controls */
+  #touch{position:absolute;inset:0;display:none;pointer-events:none}
+  #touch.on{display:block}
+  #stick{position:absolute;left:max(22px,env(safe-area-inset-left));bottom:max(26px,env(safe-area-inset-bottom));width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.5);border:3px solid rgba(255,255,255,.8);pointer-events:auto;touch-action:none}
+  #knob{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:linear-gradient(#ffb3d6,#ff8fc0);box-shadow:0 3px 0 var(--pink-d)}
+  #tbtns{position:absolute;right:max(20px,env(safe-area-inset-right));bottom:max(24px,env(safe-area-inset-bottom));width:210px;height:210px;pointer-events:none}
+  .tb{position:absolute;pointer-events:auto;touch-action:none;border:0;border-radius:50%;background:rgba(255,255,255,.82);color:var(--lav);font:inherit;font-weight:900;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 3px 0 rgba(183,155,255,.5)}
+  .tb svg{font-size:26px}
+  .tb.down{transform:scale(.94);background:#fff}
+  #t-jump{width:110px;height:110px;right:0;bottom:0;color:#fff;background:linear-gradient(#ffb3d6,#ff8fc0);box-shadow:0 4px 0 var(--pink-d);font-size:15px}
+  #t-jump svg{font-size:38px}
+  #t-gallop{width:78px;height:78px;right:118px;bottom:6px}
+  #t-magic{width:78px;height:78px;right:30px;bottom:122px;color:#ffb300}
+
+  /* overlays */
+  .overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}
+  .panel{background:var(--card);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:28px;padding:22px 24px;max-width:560px;width:100%;box-shadow:0 6px 0 rgba(183,155,255,.4);max-height:92vh;overflow:auto}
+  .panel h1{margin:0 0 2px;font-size:34px;line-height:1.05;color:var(--pink-d)}
+  .panel h2{margin:0 0 10px;font-size:24px;color:var(--pink-d)}
+  .panel h3{margin:16px 0 8px;font-size:17px}
+  .panel p{margin:6px 0;font-weight:700;line-height:1.35}
+  .tagline{opacity:.75;font-weight:800;margin-bottom:14px}
+  label.f{display:block;font-weight:900;margin:12px 0 6px}
+  #name{width:100%;font:inherit;font-weight:800;font-size:20px;padding:10px 14px;border-radius:16px;border:3px solid #e1d4ff;background:#fff;color:var(--ink);outline:none;user-select:text;-webkit-user-select:text}
+  #name:focus{border-color:var(--lav)}
+  #swatches{display:flex;gap:8px;flex-wrap:wrap}
+  .sw{width:40px;height:40px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 0 3px #e1d4ff,0 3px 0 rgba(0,0,0,.08);cursor:pointer}
+  .sw.sel{box-shadow:0 0 0 4px var(--pink-d),0 3px 0 rgba(0,0,0,.08);transform:scale(1.1)}
+  @media (max-width:430px){#swatches{gap:6px}.sw{width:35px;height:35px}}
+  #btn-quality{font:inherit;font-weight:900;font-size:16px;background:linear-gradient(#cdbbff,#a98cff);border:0;color:#fff;padding:9px 18px;border-radius:16px;cursor:pointer;box-shadow:0 3px 0 #7d63d6}
+  #btn-quality:active{transform:translateY(2px);box-shadow:0 1px 0 #7d63d6}
+  .bigbtn{margin-top:18px;width:100%;font:inherit;font-weight:900;font-size:24px;color:#fff;border:0;border-radius:22px;padding:14px;cursor:pointer;background:linear-gradient(#ffb3d6,#ff8fc0);box-shadow:0 5px 0 var(--pink-d)}
+  .bigbtn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--pink-d)}
+  .small{font-size:13px;opacity:.7;margin-top:10px}
+  #start{justify-content:flex-start}
+  #start .panel{max-width:400px;margin-left:max(0px,3vw)}
+  @media (max-width:760px){#start{align-items:flex-end;justify-content:center}#start .panel{margin:0;max-width:520px;padding:16px 18px}.panel h1{font-size:28px}}
+  .keys{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-weight:700;margin-top:6px}
+  .keys kbd{font-size:14px;background:#efe6ff;padding:3px 9px;border-radius:8px;text-align:center}
+  .closer{float:right;border:0;background:#efe6ff;color:var(--ink);font:inherit;font-weight:900;font-size:18px;border-radius:14px;padding:6px 14px;cursor:pointer}
+  .bk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .bk-card{background:#fff;border-radius:18px;padding:12px 14px}
+  .bk-card.unseen{opacity:.6}
+  .bk-title{font-weight:900;font-size:19px}.bk-sub{font-weight:700;font-size:14px;opacity:.75;margin:2px 0 6px}
+  .bk-count{font-weight:900;color:var(--pink-d);font-size:14px}
+  .chip{display:inline-flex;align-items:center;gap:4px;background:#ffe6f2;border-radius:999px;padding:3px 10px;margin:4px 4px 0 0;font-weight:800;font-size:14px}
+  .chip i{font-style:normal;display:inline-flex;font-size:11px}.chip .on{color:#ff6fa6}.chip .off{color:#d9c9f5}
+  .bk-gear{display:grid;gap:8px}
+  .gear{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:16px;padding:10px 14px;font-weight:800;opacity:.65}
+  .gear.got{opacity:1;background:#fff7d6}
+  .gear b small{display:block;font-weight:700;font-size:12px;opacity:.7}
+  #loading{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:#ffe4f1;font-weight:900;font-size:26px;color:var(--pink-d);transition:opacity .6s}
+  #loading.gone{opacity:0;pointer-events:none}
+  #dbg{position:fixed;left:8px;bottom:8px;z-index:40;font:12px monospace;color:#4a3a7a;background:rgba(255,255,255,.7);padding:4px 8px;border-radius:8px;display:none}
+</style>
+</head>
+<body>
+<canvas id="c" tabindex="0"></canvas>
+
+<div id="flash"></div>
+<div id="hud" class="hidden">
+  <div id="hud-left">
+    <div class="pill" title="Friends"><span class="ico" id="ico-heart"></span><span id="hud-friends">0 / 0</span></div>
+    <div class="pill" title="Gumdrop treats"><span class="ico" id="ico-candy"></span><span id="hud-treats">0</span></div>
+    <div class="pill" id="pill-spell" title="Spell (press C to switch)"><span class="ico" id="ico-spell"></span><span id="hud-spell">Sparkle Burst</span></div>
+    <div class="pill hidden" id="pill-rings" title="Rainbow rings"><span class="ico" id="ico-ring"></span><span id="hud-rings">0 / 8</span></div>
+    <div class="pill hidden" id="pill-quest" title="Quest"><span class="ico" id="ico-quest"></span><span id="hud-quest"></span></div>
+  </div>
+  <div id="hud-right">
+    <button class="rb" id="btn-time" aria-label="Change time of day"></button>
+    <button class="rb" id="btn-book" aria-label="Friends book"></button>
+    <button class="rb" id="btn-sound" aria-label="Sound"></button>
+    <button class="rb" id="btn-help" aria-label="Help"></button>
+  </div>
+  <button id="compass" class="hidden" tabindex="-1" aria-label="Compass: tap to switch view" title="Up is North. Tap (or press V) to switch the view"><span id="rose"><b class="n">N</b><b class="e">E</b><b class="s">S</b><b class="w">W</b></span><span id="heading"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l7.500 18-7.500-4.200-7.500 4.200z" fill="currentColor" stroke="#fff" stroke-width="1.600" stroke-linejoin="round"/></svg></span></button>
+  <div id="toast"></div>
+  <div id="tags"></div>
+  <div id="prompts"><div id="phint"><span><kbd>Tab</kbd> switch who you talk to</span></div></div>
+  <div id="touch"></div>
+</div>
+
+<div id="start" class="overlay hidden">
+  <div class="panel">
+    <h1>Unicorn Adventure</h1>
+    <div class="tagline">A cotton-candy world to explore</div>
+    <label class="f" for="name">Name your unicorn</label>
+    <input id="name" maxlength="14" value="Sparkle" autocomplete="off" spellcheck="false">
+    <label class="f">Pick a coat</label>
+    <div id="swatches"></div>
+    <button class="bigbtn" id="go">Let's ride!</button>
+    <div class="small">Space jumps, hold it in the air to glide. Shift gallops. Click and drag to look around.</div>
+  </div>
+</div>
+
+<div id="help" class="overlay hidden">
+  <div class="panel">
+    <button class="closer" id="help-close">Close</button>
+    <h2>How to play</h2>
+    <div class="keys">
+      <kbd>&uarr; &darr; &larr; &rarr;</kbd><span>Ride the way you push: Left goes left, Down turns around, and the view swings round to follow (W A S D work too)</span>
+      <kbd>Shift</kbd><span>Gallop! Sparkles and a rainbow trail</span>
+      <kbd>Space</kbd><span>Jump. Press again in the air to flap, hold to glide</span>
+      <kbd>E</kbd><span>Pet a nearby friend, or say hi to a townsperson (the outlined card)</span>
+      <kbd>Tab</kbd><span>Switch between friends when several are close. You can also click or tap a card</span>
+      <kbd>F</kbd><span>Feed a treat. Friends love them, and you never run out!</span>
+      <kbd>R</kbd><span>Play together with a friend</span>
+      <kbd>Q</kbd><span>Cast your horn magic</span>
+      <kbd>C</kbd><span>Change spell (or press 1 to 4). New spells unlock as you make friends</span>
+      <kbd>N</kbd><span>Skip to sunrise, day, sunset or starry night</span>
+      <kbd>B</kbd><span>Open your friends book</span>
+      <kbd>P</kbd><span>Dream ride: sit back while your unicorn explores by itself</span>
+      <kbd>V</kbd><span>Try the map view (looking down from above, arrow keys go North, South, East and West). Press V again to go back</span>
+      <kbd>G</kbd><span>Graphics: Fancy (inked cartoon outlines) or Simple (a little faster on slow devices)</span>
+      <kbd>Mouse</kbd><span>Drag to look around, scroll to zoom</span>
+    </div>
+    <p><button id="btn-quality" type="button">Graphics: Fancy</button></p>
+    <p class="small">Gamepad works too: A jumps, X is magic, B pets, Y feeds, bumper plays, d-pad right changes spell, d-pad left switches who you talk to.</p>
+    <p>Make friends with every creature, collect gumdrops from the colorful bushes for wishes, and fly through the rainbow rings!</p>
+    <p class="small">Little wonders to find: bounce on the big mushroom caps, ride into glowing fairy rings, toss two gumdrops into the wishing fountain (press E), and ride across the rainbow chimes. Wish on shooting stars at night!</p>
+    <p class="small">Twinkle Town is a little way west of where you start: a cobbled Main Street, a plaza and fountain, and shopkeepers who live there. Say hi to the baker for a treat, and ask Pixel the fox about the mail. Everyone goes to bed when the stars come out!</p>
+  </div>
+</div>
+
+<div id="book" class="overlay hidden">
+  <div class="panel" style="max-width:760px">
+    <button class="closer" id="book-close">Close</button>
+    <h2>Friends book</h2>
+    <div id="book-body"></div>
+  </div>
+</div>
+
+<div id="loading">Painting the world...</div>
+<div id="dbg"></div>
+
+<script src="lib/three.min.js"></script>
+<script src="js/core.js"></script>
+<script src="js/cartoon.js"></script>
+<script src="js/world.js"></script>
+<script src="js/town_build.js"></script>
+    <script src="js/folk_models.js"></script>
+    <script src="js/town_folk.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/grass.js"></script>
+<script src="js/daynight.js"></script>
+<script src="js/magic.js"></script>
+<script src="js/wonders.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/unicorn_rig.js"></script>
+<script src="js/unicorn.js"></script>
+<script src="js/glitterpoop.js"></script>
+<script src="js/creatures.js"></script>
+<script src="js/minigames.js"></script>
+<script src="js/quests.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

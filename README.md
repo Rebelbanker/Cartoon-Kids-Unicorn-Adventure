@@ -1,1 +1,1 @@
-This is a little unicorn game I made for my kids.
+This is a little unicorn game that Claude made for my kids.
